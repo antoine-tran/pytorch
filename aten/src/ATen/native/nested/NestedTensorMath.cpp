@@ -61,6 +61,9 @@ Tensor pad_tensor_to_shape(
 
 Tensor NestedTensor_nested_tensor_from_mask(const Tensor& t, const Tensor& mask, bool mask_check) {
     TORCH_CHECK(mask.scalar_type() == at::ScalarType::Bool, "Expected mask to be of ScalarType Bool, but got ", mask.scalar_type(), " instead.");
+    TORCH_CHECK((mask.scalar_type() == at::ScalarType::Bool) || (at::is_floating_point(mask)),
+                "Expected mask to be of type Bool or floating dtype but got ",
+                mask.scalar_type(), " instead.");
     TORCH_CHECK(mask.dim() == 2, "Padding mask should be 2D");
     TORCH_CHECK(t.dim() == 3, "Input should be a 3D tensor, N * L * D");
     auto N = t.size(0), L = t.size(1), D = t.size(2);
@@ -91,7 +94,9 @@ Tensor NestedTensor_nested_tensor_from_mask(const Tensor& t, const Tensor& mask,
 }
 
 bool NestedTensor_nested_tensor_from_mask_left_aligned(const Tensor& t, const Tensor& mask) {
-    TORCH_CHECK(mask.scalar_type() == at::ScalarType::Bool, "Expected mask to be of ScalarType Bool, but got ", mask.scalar_type(), " instead.");
+  TORCH_CHECK((mask.scalar_type() == at::ScalarType::Bool) || (at::is_floating_point(mask)),
+                "Expected mask to be of type Bool or floating dtype but got ",
+                mask.scalar_type(), " instead.");
     TORCH_CHECK(mask.dim() == 2, "Padding mask should be 2D");
     TORCH_CHECK(t.dim() == 3, "Input should be a 3D tensor, N * L * D");
     auto N = t.size(0), L = t.size(1);
@@ -99,7 +104,13 @@ bool NestedTensor_nested_tensor_from_mask_left_aligned(const Tensor& t, const Te
     TORCH_CHECK(N == NN && L == LL, "Mask size should match input size");
 
     // N * L
-    Tensor sizes = mask;
+    Tensor sizes;
+    if (mask.scalar_type() != at::ScalarType::Bool){
+      sizes = mask.to(at::kBool);
+    } else {
+      sizes = mask;
+    }
+
     Tensor tmp_pad = at::zeros({N, 1}, mask.options());
     // Make sure padding is only added at the end of mask
     Tensor nums = at::cat({sizes, tmp_pad}, 1).to(kInt).argmin(1);
