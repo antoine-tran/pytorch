@@ -1,5 +1,6 @@
-#include <ATen/core/dispatch/Dispatcher.h>
 #include <ATen/core/LegacyTypeDispatch.h>
+#include <ATen/core/dispatch/Dispatcher.h>
+#include <torch/csrc/autograd/autograd_not_implemented_fallback.h>
 #include <torch/library.h>
 
 /*
@@ -27,45 +28,49 @@ namespace {
 // NB: But not the private use ones; maybe the extension wants
 // to override it themselves!
 
+#define AUTOGRAD_FALLBACK torch::autograd::basicAutogradNotImplementedFallback()
+
 TORCH_LIBRARY_IMPL(_, AutogradOther, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradCPU, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradXPU, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradCUDA, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradXLA, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradLazy, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradMPS, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 TORCH_LIBRARY_IMPL(_, AutogradMeta, m) {
-  m.fallback(torch::CppFunction::makeFallthrough());
+  m.fallback(AUTOGRAD_FALLBACK);
 }
 
 // see Note [ADInplaceOrView key]
 TORCH_LIBRARY_IMPL(_, ADInplaceOrView, m) {
-      m.fallback(torch::CppFunction::makeFallthrough());
-}
-
-TORCH_LIBRARY_IMPL(_, AutogradHPU, m) {
   m.fallback(torch::CppFunction::makeFallthrough());
 }
 
+TORCH_LIBRARY_IMPL(_, AutogradHPU, m) {
+  m.fallback(AUTOGRAD_FALLBACK);
 }
+
+#undef AUTOGRAD_FALLBACK
+
+} // namespace
