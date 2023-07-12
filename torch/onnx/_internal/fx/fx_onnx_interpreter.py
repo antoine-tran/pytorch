@@ -4,7 +4,6 @@ import inspect
 import operator
 import re
 import types
-import warnings
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import onnxscript  # type: ignore[import]
@@ -180,11 +179,8 @@ def filter_incompatible_and_dtype_convert_kwargs(kwargs):
                 # We omit if dtype is not provided, because onnxscript handles the
                 # default case.
                 continue
-            else:
-                filtered["dtype"] = int(
-                    jit_type_utils.JitScalarType.from_dtype(value).onnx_type()
-                )
-            continue
+            elif isinstance(value, torch.dtype):
+                value = int(jit_type_utils.JitScalarType.from_dtype(value).onnx_type())
         filtered[key] = value
     return filtered
 
@@ -586,10 +582,6 @@ class FxOnnxInterpreter:
                     node_with_fixed_shape_args, node_with_fixed_shape_kwargs
                 )
             except ValueError as value_error:
-                warnings.warn(
-                    f"\nFound unsupported input types on PyTorch Op {node.target} with "
-                    f"ValueError: \n{value_error}.\n"
-                )
                 diagnostic = self.diagnostic_context.inflight_diagnostic()
                 diagnostic.with_additional_message(
                     f"### Op level debug fails due to unsupported input types\n"
